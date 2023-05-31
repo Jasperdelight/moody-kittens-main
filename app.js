@@ -1,4 +1,9 @@
-let kittens = []
+let kittens = [];
+// Retrieve the existing saved kitten list from local storage
+const savedKittens = JSON.parse(localStorage.getItem('kittens')) || [];
+kittens = savedKittens
+
+
 /**
  * Called when submitting the new Kitten Form
  * This method will pull data from the form
@@ -8,7 +13,6 @@ let kittens = []
  */
 function addKitten(event) {
   event.preventDefault();
-
   const nameInput = document.querySelector('.kittenForm input[name="name"]');
   const kittenName = nameInput.value.trim();
 
@@ -35,6 +39,7 @@ function addKitten(event) {
     name: kittenName,
     mood: Math.floor(Math.random() * 10) + 1,
     id: kittenName,
+    hidden: true
     // affection: 5,
     // Add other properties if needed
   };
@@ -49,11 +54,11 @@ function addKitten(event) {
 
    // Image Maybe? //
    const image = document.createElement('img');
-   image.src = 'moody-logo.png'; 
+   image.src = 'moody-logo.png';
    image.height = '100px';
    image.width = '100px';
    listItem.appendChild(image);
- 
+
 
   // Create a clear button for the new kitten
   const clearButton = document.createElement('button');
@@ -61,7 +66,7 @@ function addKitten(event) {
   clearButton.addEventListener('click', () => {
     clearKitten(newKitten);
     submittedKittensList.removeChild(listItem);
-    drawKittens(); // Update the list of kittens on the page
+    drawKittens(kittens); // Update the list of kittens on the page
   });
 
   listItem.appendChild(image);
@@ -69,30 +74,30 @@ function addKitten(event) {
   submittedKittensList.appendChild(listItem);
 
   // Save the updated kittens array to local storage
-  saveKittens(savedKittens); 
+  saveKittens(savedKittens);
 
   kittens = savedKittens; //NEW// Save array to call storage//
   saveKittens(kittens);
-  
+
   // Display a success message
   const messageContainer = document.getElementById('messageContainer');
   messageContainer.textContent = `You added a kitten named "${kittenName}"!`;
-  
+
     // Clear the input field
     nameInput.value = '';
 
       // Refresh the list of kittens on the page // NEW //
   loadKittens();
+  drawKittens(kittens);
 }
-  // Retrieve the existing saved kitten list from local storage
-  const savedKittens = JSON.parse(localStorage.getItem('kittens')) || [];
-  kittens = savedKittens
+
 
 /**
  * Converts the kittens array to a JSON string then
- * Saves the string to localstorage at the key kittens 
+ * Saves the string to localstorage at the key kittens
  */
 function saveKittens(kittens) {
+  console.log(kittens);
   localStorage.setItem('kittens', JSON.stringify(kittens));
 }
 
@@ -116,7 +121,7 @@ function loadKittens() {
     clearButton.addEventListener('click', () => {
       clearKitten(kitten);
       submittedKittensList.removeChild(listItem);
-      drawKittens();
+      drawKittens(kittens);
     });
 
     listItem.appendChild(clearButton);
@@ -127,20 +132,21 @@ function loadKittens() {
 /**
  * Draw all of the kittens to the kittens element
  */
-function drawKittens() {
+function drawKittens(listToDraw) {
   const kittensContainer = document.getElementById('kittens');
   kittensContainer.innerHTML = ''; // Clear the container before rendering
 
-  for (const kitten of savedKittens) {
+  for (const kitten of listToDraw) {
     const kittenCard = document.createElement('div');
     kittenCard.classList.add('card');
     kittenCard.classList.add('shadow');
- //   kittenCard.classList.add('hidden')
-    kittenCard.id = kitten.kittenId
-
+    if(kitten.hidden){
+      kittenCard.classList.add('hidden');
+    }
+    kittenCard.id = kitten.id;
     const kittenName = document.createElement('h3');
     kittenName.textContent = kitten.name;
-    
+
 
     const kittenMood = document.createElement('p');
     kittenMood.textContent = `Mood: ${kitten.mood}`;
@@ -180,7 +186,7 @@ function drawKittens() {
     });
 
     // const hiddenCat = document.getElementById('kittens').classList.toggle("hidden")
-    
+
     kittenCard.appendChild(kittenName);
     kittenCard.appendChild(kittenMood);
     kittenCard.appendChild(kittenImage);
@@ -204,7 +210,7 @@ function findKitten() {
   searchInput.value = '';
 
   // Find the kitten by ID in the savedKittens array
-  const kitten = findKittenById(kittenId, savedKittens);
+  const kitten = findKittenById(kittenId, kittens);
 
   // Unhide kitten?
  // document.getElementById(kittenCard).classList.toggle("hidden")
@@ -215,34 +221,34 @@ function findKitten() {
   const searchResultContainer = document.getElementById('searchResultContainer');
   if (kitten) {
     searchResultContainer.textContent = `Found kitten: ${kitten.name} (ID: ${kitten.id})`;
-   // Unhide cat?// document.getElementById('kittens').classList.toggle("hidden")
-    
+    document.getElementById(kitten.id).classList.toggle("hidden");
+    saveKittens(kittens)
   } else {
     searchResultContainer.textContent = `No kitten found with ID: ${kittenId}`;
   }
 
-  
+
 
 }
 
 /**
  * Find the kitten in the array by its id
- * @param {string} id 
+ * @param {string} id
  * @param {Kitten[]} kittensArray
  * @return {Kitten|null}
  */
 function findKittenById(id, kittensArray) {
-  for (const kitten of kittensArray) {
+  for (let kitten of kittensArray) {
     if (kitten.id === id) {
-      
+      kitten.hidden = !kitten.hidden;
       return kitten;
-      
-      
+
+
     }
   }
   return null; // Return null if no kitten is found with the given id
 
-  
+
 
 }
 
@@ -253,10 +259,10 @@ function findKittenById(id, kittensArray) {
 /**
  * Find the kitten in the array of kittens
  * Generate a random Number
- * if the number is greater than .5 
+ * if the number is greater than .5
  * increase the kittens affection
  * otherwise decrease the affection
- * @param {string} id 
+ * @param {string} id
  */
 function pet(id) {
   // Find the kitten by ID in the savedKittens array
@@ -280,7 +286,7 @@ function pet(id) {
     saveKittens(savedKittens);
 
     // Update the display of the kitten's mood on the page
-    drawKittens();
+    drawKittens(savedKittens);
   }
 }
 
@@ -299,14 +305,14 @@ function catnip(kittenId) {
     kitten.mood = 5;
     kitten.affection = 'Tolerant';
     saveKittens(savedKittens); // Save the updated kittens array
-    drawKittens(); // Redraw the kittens to reflect the changes
+    drawKittens(savedKittens); // Redraw the kittens to reflect the changes
   }
 }
 
 
 /**
  * Sets the kittens mood based on its affection
- * @param {Kitten} kitten 
+ * @param {Kitten} kitten
  */
 function setKittenMood(kitten) {
   if (kitten.affection > 7) {
@@ -342,13 +348,13 @@ function clearKittens() {
   messageContainer.textContent = 'Kitten data cleared!';
 }
 /**
- * Removes the welcome content and should probably draw the 
+ * Removes the welcome content and should probably draw the
  * list of kittens to the page. Good Luck
  */
 function getStarted() {
   document.getElementById("welcome").remove();
   console.log('Good Luck, Take it away')
-  drawKittens();
+  drawKittens(kittens);
 }
 
 
